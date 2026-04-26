@@ -112,10 +112,6 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        // Resize floor to match this level's map
-        MazeFloor floor = FindObjectOfType<MazeFloor>();
-        if (floor != null) floor.Resize(cols, rows);
-
         Debug.Log($"Level {levelNumber} generated: {rows} rows x {cols} cols");
     }
 
