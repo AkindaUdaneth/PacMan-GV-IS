@@ -3,11 +3,51 @@ using UnityEngine;
 [ExecuteAlways]
 public class MapGenerator : MonoBehaviour
 {
+    [Header("Level Settings")]
+    [Range(1, 3)]
+    public int levelNumber = 1;
+
     [Header("Drag Wall_Prototype prefab here")]
     public GameObject wallPrefab;
     public float tileSize = 1f;
 
-    private static readonly int[,] PacManMap = new int[,]
+    // ─── LEVEL 1: Simple ───────────────────────────────────────────
+    private static readonly int[,] Level1Map = new int[,]
+    {
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1},
+        {1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {0,0,0,0,0,1,0,0,1,1,1,1,0,0,1,0,0,0,0,0},
+        {1,0,0,0,0,1,0,0,1,1,1,1,0,0,1,0,0,0,0,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1},
+        {1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    };
+
+    // ─── LEVEL 2: Medium ───────────────────────────────────────────
+    private static readonly int[,] Level2Map = new int[,]
+    {
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,0,1,1,0,0,1,0,1,1,0,1,0,0,1,1,0,1,1,0,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,0,1,0,1,1,1,1,0,0,1,1,1,1,0,1,0,1,1,0,1},
+        {1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1},
+        {0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,0,1,0,0,0,0,0,0,0},
+        {1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1},
+        {1,0,1,1,0,1,0,1,1,1,1,0,0,1,1,1,1,0,1,0,1,1,0,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,0,1,1,0,0,1,0,1,1,0,1,0,0,1,1,0,1,1,0,1},
+        {1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    };
+
+    // ─── LEVEL 3: Complex (original Pac-Man layout) ────────────────
+    private static readonly int[,] Level3Map = new int[,]
     {
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
         {1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1},
@@ -28,15 +68,29 @@ public class MapGenerator : MonoBehaviour
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     };
 
+    // ─── Public getter so IS module can access the map ─────────────
+    public int[,] GetCurrentMap()
+    {
+        return levelNumber switch
+        {
+            1 => Level1Map,
+            2 => Level2Map,
+            _ => Level3Map,
+        };
+    }
+
+    // ─── Generate from Inspector right-click menu ──────────────────
     [ContextMenu("Generate Maze")]
     public void GenerateMaze()
     {
-        // Clear existing walls first
+        // Clear existing walls
         for (int i = transform.childCount - 1; i >= 0; i--)
             DestroyImmediate(transform.GetChild(i).gameObject);
 
-        int rows = PacManMap.GetLength(0);
-        int cols = PacManMap.GetLength(1);
+        int[,] map = GetCurrentMap();
+        int rows = map.GetLength(0);
+        int cols = map.GetLength(1);
+
         float offsetX = -(cols * tileSize) / 2f + tileSize / 2f;
         float offsetZ = -(rows * tileSize) / 2f + tileSize / 2f;
 
@@ -44,20 +98,25 @@ public class MapGenerator : MonoBehaviour
         {
             for (int col = 0; col < cols; col++)
             {
-                if (PacManMap[row, col] == 1)
+                if (map[row, col] == 1)
                 {
                     Vector3 pos = new Vector3(
                         offsetX + col * tileSize,
                         1f,
                         offsetZ + row * tileSize
                     );
-                    GameObject wall = Instantiate(wallPrefab, pos, 
-                        Quaternion.identity, transform);
+                    GameObject wall = Instantiate(
+                        wallPrefab, pos, Quaternion.identity, transform);
                     wall.name = $"Wall_{row}_{col}";
                 }
             }
         }
-        Debug.Log($"Maze generated with {rows}x{cols} grid");
+
+        // Resize floor to match this level's map
+        MazeFloor floor = FindObjectOfType<MazeFloor>();
+        if (floor != null) floor.Resize(cols, rows);
+
+        Debug.Log($"Level {levelNumber} generated: {rows} rows x {cols} cols");
     }
 
     void Start()
