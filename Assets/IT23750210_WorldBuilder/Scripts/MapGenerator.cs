@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.AI.Navigation;
 
 [ExecuteAlways]
 public class MapGenerator : MonoBehaviour
@@ -11,7 +12,11 @@ public class MapGenerator : MonoBehaviour
     public GameObject wallPrefab;
     public float tileSize = 1f;
 
-    // ─── LEVEL 1: Simple ───────────────────────────────────────────
+    [Header("Level Materials")]
+    public Material wallMaterialL1;
+    public Material wallMaterialL2;
+    public Material wallMaterialL3;
+
     private static readonly int[,] Level1Map = new int[,]
     {
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -28,7 +33,6 @@ public class MapGenerator : MonoBehaviour
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     };
 
-    // ─── LEVEL 2: Medium ───────────────────────────────────────────
     private static readonly int[,] Level2Map = new int[,]
     {
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -46,7 +50,6 @@ public class MapGenerator : MonoBehaviour
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     };
 
-    // ─── LEVEL 3: Complex (original Pac-Man layout) ────────────────
     private static readonly int[,] Level3Map = new int[,]
     {
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -68,7 +71,6 @@ public class MapGenerator : MonoBehaviour
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     };
 
-    // ─── Public getter so IS module can access the map ─────────────
     public int[,] GetCurrentMap()
     {
         return levelNumber switch
@@ -79,11 +81,9 @@ public class MapGenerator : MonoBehaviour
         };
     }
 
-    // ─── Generate from Inspector right-click menu ──────────────────
     [ContextMenu("Generate Maze")]
     public void GenerateMaze()
     {
-        // Clear existing walls
         for (int i = transform.childCount - 1; i >= 0; i--)
             DestroyImmediate(transform.GetChild(i).gameObject);
 
@@ -93,6 +93,11 @@ public class MapGenerator : MonoBehaviour
 
         float offsetX = -(cols * tileSize) / 2f + tileSize / 2f;
         float offsetZ = -(rows * tileSize) / 2f + tileSize / 2f;
+
+        // Pick material for this level
+        Material levelMat = levelNumber == 1 ? wallMaterialL1 :
+                            levelNumber == 2 ? wallMaterialL2 :
+                            wallMaterialL3;
 
         for (int row = 0; row < rows; row++)
         {
@@ -108,9 +113,16 @@ public class MapGenerator : MonoBehaviour
                     GameObject wall = Instantiate(
                         wallPrefab, pos, Quaternion.identity, transform);
                     wall.name = $"Wall_{row}_{col}";
+
+                    // Apply level-specific material if assigned
+                    if (levelMat != null)
+                        wall.GetComponent<Renderer>().material = levelMat;
                 }
             }
         }
+
+        NavMeshSurface surface = FindObjectOfType<NavMeshSurface>();
+        if (surface != null) surface.BuildNavMesh();
 
         Debug.Log($"Level {levelNumber} generated: {rows} rows x {cols} cols");
     }
