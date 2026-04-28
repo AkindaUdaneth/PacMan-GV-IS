@@ -121,7 +121,7 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        NavMeshSurface surface = FindObjectOfType<NavMeshSurface>();
+        NavMeshSurface surface = FindFirstObjectByType<NavMeshSurface>();
         if (surface != null) surface.BuildNavMesh();
 
         Debug.Log($"Level {levelNumber} generated: {rows} rows x {cols} cols");
