@@ -81,16 +81,10 @@ public class NavMeshGraphExtractor : MonoBehaviour
 
                 float dist = Vector3.Distance(nodes[i], nodes[j]);
 
-                // Only connect immediate neighbours (1 tile away)
+                // Connect nodes that are 1 tile apart (direct neighbours only)
                 if (dist <= sampleSpacing * 1.5f)
                 {
-                    NavMeshPath path = new NavMeshPath();
-                    if (NavMesh.CalculatePath(
-                        nodes[i], nodes[j], NavMesh.AllAreas, path)
-                        && path.status == NavMeshPathStatus.PathComplete)
-                    {
-                        adjacencyList[i].Add(j);
-                    }
+                    adjacencyList[i].Add(j);
                 }
             }
         }
