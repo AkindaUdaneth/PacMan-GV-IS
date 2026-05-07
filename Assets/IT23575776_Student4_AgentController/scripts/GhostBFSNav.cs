@@ -178,7 +178,7 @@ public class GhostBFSNav : MonoBehaviour
 
         Debug.Log($"[{gameObject.name}] Pathfinding: Ghost at {transform.position:F1}, PacMan at {pacman.position:F1}. Start node {start}, Goal node {goal}");
 
-        path = BFSPathfinder.FindPath(start, goal, graph.adjacencyList);
+        path = BFSPathfinder.FindShortestPath(start, goal, graph.adjacencyList);
         pathIndex = 0;
         
         if (path.Count == 0)

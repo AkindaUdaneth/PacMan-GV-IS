@@ -1,45 +1,80 @@
+using System;
 using System.Collections.Generic;
 
-public class BFSPathfinder
+public static class BFSPathfinder
 {
-    public static List<int> FindPath(int start, int goal, Dictionary<int, List<int>> graph)
+    /// <summary>
+    /// Finds the shortest path between two nodes using BFS.
+    /// </summary>
+    public static List<int> FindShortestPath(
+        int start,
+        int goal,
+        Dictionary<int, List<int>> graph)
     {
-        Queue<int> queue = new Queue<int>();
-        Dictionary<int, int> cameFrom = new Dictionary<int, int>();
+        // Handle invalid input
+        if (graph == null || !graph.ContainsKey(start) || !graph.ContainsKey(goal))
+            return new List<int>();
+
+        // If start and goal are same
+        if (start == goal)
+            return new List<int> { start };
+
+        Queue<int> queue = new();
+        HashSet<int> visited = new();
+        Dictionary<int, int> parent = new();
 
         queue.Enqueue(start);
-        cameFrom[start] = -1;
+        visited.Add(start);
 
         while (queue.Count > 0)
         {
             int current = queue.Dequeue();
 
-            if (current == goal)
-                break;
+            // Skip if node has no neighbors
+            if (!graph.TryGetValue(current, out List<int> neighbors))
+                continue;
 
-            foreach (int neighbor in graph[current])
+            foreach (int neighbor in neighbors)
             {
-                if (!cameFrom.ContainsKey(neighbor))
-                {
-                    queue.Enqueue(neighbor);
-                    cameFrom[neighbor] = current;
-                }
+                if (visited.Contains(neighbor))
+                    continue;
+
+                visited.Add(neighbor);
+                parent[neighbor] = current;
+
+                // Early exit when goal is found
+                if (neighbor == goal)
+                    return ReconstructPath(parent, start, goal);
+
+                queue.Enqueue(neighbor);
             }
         }
 
-        List<int> path = new List<int>();
+        // No path found
+        return new List<int>();
+    }
 
-        if (!cameFrom.ContainsKey(goal))
-            return path;
+    /// <summary>
+    /// Builds the final path from parent dictionary.
+    /// </summary>
+    private static List<int> ReconstructPath(
+        Dictionary<int, int> parent,
+        int start,
+        int goal)
+    {
+        List<int> path = new();
 
-        int temp = goal;
-        while (temp != -1)
+        int current = goal;
+
+        while (current != start)
         {
-            path.Add(temp);
-            temp = cameFrom[temp];
+            path.Add(current);
+            current = parent[current];
         }
 
+        path.Add(start);
         path.Reverse();
+
         return path;
     }
 }
