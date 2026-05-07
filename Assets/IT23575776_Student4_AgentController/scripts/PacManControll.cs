@@ -4,10 +4,14 @@ using UnityEngine.InputSystem;
 public class PacManControll : MonoBehaviour
 {
     public float speed = 10f;
+    public float rotationSpeed = 100f; // Mouse sensitivity
     private Rigidbody rb;
 
+    private Vector3 worldSpaceMoveDirection = Vector3.zero;
+    private Vector2 moveInput;
+    private Vector2 lookInput;
 
-    private Vector3 direction = Vector3.zero;
+    public Vector3 CurrentDirection => worldSpaceMoveDirection;
 
     void Start()
     {
@@ -16,41 +20,49 @@ public class PacManControll : MonoBehaviour
         {
             Debug.LogWarning("No Rigidbody found on PacMan. Using transform movement instead.");
         }
+        // Lock and hide the cursor
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     void Update()
     {
-        direction = Vector3.zero;
-
+        // --- Read Input from new Input System ---
         if (Keyboard.current != null)
         {
-            if (Keyboard.current.wKey.isPressed) direction = Vector3.forward;
-            else if (Keyboard.current.sKey.isPressed) direction = Vector3.back;
-            else if (Keyboard.current.aKey.isPressed) direction = Vector3.left;
-            else if (Keyboard.current.dKey.isPressed) direction = Vector3.right;
+            moveInput = Vector2.zero;
+            if (Keyboard.current.wKey.isPressed) moveInput.y += 1;
+            if (Keyboard.current.sKey.isPressed) moveInput.y -= 1;
+            if (Keyboard.current.aKey.isPressed) moveInput.x -= 1;
+            if (Keyboard.current.dKey.isPressed) moveInput.x += 1;
         }
-        else
+
+        if (Mouse.current != null)
         {
-            if (Input.GetKey(KeyCode.W)) direction = Vector3.forward;
-            else if (Input.GetKey(KeyCode.S)) direction = Vector3.back;
-            else if (Input.GetKey(KeyCode.A)) direction = Vector3.left;
-            else if (Input.GetKey(KeyCode.D)) direction = Vector3.right;
+            lookInput = Mouse.current.delta.ReadValue();
         }
+
+        // --- Rotation ---
+        transform.Rotate(Vector3.up, lookInput.x * rotationSpeed * Time.deltaTime);
+
+        // --- Movement ---
+        Vector3 localMoveDirection = new Vector3(moveInput.x, 0, moveInput.y).normalized;
+
+        // Convert local direction to world space
+        worldSpaceMoveDirection = transform.TransformDirection(localMoveDirection);
     }
 
     void FixedUpdate()
     {
         if (rb != null)
         {
-            // Preserve gravity on Y axis, only control X and Z movement
-            Vector3 newVelocity = rb.linearVelocity;
-            newVelocity.x = direction.x * speed;
-            newVelocity.z = direction.z * speed;
-            rb.linearVelocity = newVelocity;
+            // Apply physics-based movement
+            rb.MovePosition(rb.position + worldSpaceMoveDirection * speed * Time.fixedDeltaTime);
         }
         else
         {
-            transform.position += direction * speed * Time.fixedDeltaTime;
+            // Fallback to transform-based movement
+            transform.Translate(worldSpaceMoveDirection * speed * Time.fixedDeltaTime, Space.World);
         }
     }
 }
