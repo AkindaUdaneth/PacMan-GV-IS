@@ -257,4 +257,22 @@ public class GhostBFSNav : MonoBehaviour
     {
         return pathIndex;
     }
+
+    public Vector3 GetCurrentMoveDirection()
+    {
+        if (graph == null || graph.nodes.Count == 0)
+            return Vector3.zero;
+
+        if (path == null || path.Count == 0 || pathIndex >= path.Count)
+            return Vector3.zero;
+
+        Vector3 targetNodePos = graph.nodes[path[pathIndex]];
+        Vector3 direction = targetNodePos - transform.position;
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude < 0.0001f)
+            return Vector3.zero;
+
+        return direction.normalized;
+    }
 }
