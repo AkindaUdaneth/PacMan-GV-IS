@@ -5,6 +5,8 @@ public class GhostBFSNav : MonoBehaviour
 {
     public Transform pacman;
     public float speed = 3f;
+    public float minSpeed = 2f;
+    public float maxSpeed = 5f;
 
     private NavMeshGraphExtractor graph;
     private Rigidbody rb;
@@ -22,6 +24,10 @@ public class GhostBFSNav : MonoBehaviour
 
         graph = FindFirstObjectByType<NavMeshGraphExtractor>();
         TryFindPacman(initial: true);
+
+        // Randomize speed at game launch
+        speed = Random.Range(minSpeed, maxSpeed);
+        Debug.Log($"[{name}] Assigned speed: {speed}");
     }
 
     void Update()
@@ -132,11 +138,53 @@ public class GhostBFSNav : MonoBehaviour
         int start = GetClosestNode(transform.position);
         int goal = GetClosestNode(pacman.position);
 
-        var newPath = BFSPathfinder.FindShortestPath(start, goal, graph.adjacencyList);
+        var shortest = BFSPathfinder.FindShortestPath(start, goal, graph.adjacencyList);
+        var chosenPath = shortest;
 
-        if (newPath != null && newPath.Count > 0)
+        if (shortest != null && shortest.Count > 0)
         {
-            path = newPath;
+            // Check for faster ghosts that share nodes on this path
+            var others = FindObjectsByType<GhostBFSNav>(FindObjectsSortMode.None);
+            bool fasterOnSameWay = false;
+
+            for (int i = 0; i < others.Length; i++)
+            {
+                var g = others[i];
+                if (g == this) continue;
+
+                if (g.speed <= this.speed + 0.01f) continue; // only consider strictly faster
+
+                var otherPath = g.GetCurrentPath();
+                if (otherPath == null || otherPath.Count == 0) continue;
+
+                // Build set of nodes we will traverse from our current index
+                int myStart = Mathf.Max(0, pathIndex);
+                var myAhead = new HashSet<int>();
+                for (int k = myStart; k < shortest.Count; k++) myAhead.Add(shortest[k]);
+
+                foreach (int node in otherPath)
+                {
+                    if (myAhead.Contains(node))
+                    {
+                        fasterOnSameWay = true;
+                        break;
+                    }
+                }
+
+                if (fasterOnSameWay) break;
+            }
+
+            if (fasterOnSameWay)
+            {
+                var second = BFSPathfinder.FindSecondShortestPath(start, goal, graph.adjacencyList);
+                if (second != null && second.Count > 0)
+                    chosenPath = second;
+            }
+        }
+
+        if (chosenPath != null && chosenPath.Count > 0)
+        {
+            path = chosenPath;
             pathIndex = 0;
         }
     }
@@ -197,5 +245,16 @@ public class GhostBFSNav : MonoBehaviour
         }
 
         return closest;
+    }
+
+    // Expose path and index for other ghosts to inspect
+    public List<int> GetCurrentPath()
+    {
+        return path;
+    }
+
+    public int GetCurrentPathIndex()
+    {
+        return pathIndex;
     }
 }
