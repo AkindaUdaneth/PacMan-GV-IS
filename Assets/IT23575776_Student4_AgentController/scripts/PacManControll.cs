@@ -29,6 +29,15 @@ public class PacManControll : MonoBehaviour
         {
             rb.freezeRotation = true;
         }
+
+        if (GetComponent<Collider>() == null)
+        {
+            CapsuleCollider capsule = gameObject.AddComponent<CapsuleCollider>();
+            capsule.center = new Vector3(0f, 0.9f, 0f);
+            capsule.height = 1.8f;
+            capsule.radius = 0.35f;
+        }
+
         // Lock and hide the cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
