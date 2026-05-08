@@ -10,6 +10,7 @@ public class PelletsSpawner : MonoBehaviour
     [SerializeField] private float bigScale = 0.12f;
 
     private NavMeshGraphExtractor graphExtractor;
+    private int totalPelletCount = 0;
 
     void Start()
     {
@@ -44,11 +45,13 @@ public class PelletsSpawner : MonoBehaviour
         HashSet<int> bigSet = new HashSet<int>();
         for (int k = 0; k < bigCount; k++) bigSet.Add(indices[k]);
 
+        totalPelletCount = 0;
         for (int n = 0; n < nodeCount; n++)
         {
             Vector3 node = graphExtractor.nodes[n];
             bool isBig = bigSet.Contains(n);
             SpawnPelletAtNode(node, isBig);
+            totalPelletCount++;
         }
     }
 
@@ -120,5 +123,24 @@ public class PelletsSpawner : MonoBehaviour
 
         var collector = pellet.AddComponent<PelletCollector>();
         collector.scoreValue = isBig ? 20 : 10;
+    }
+
+    public void ClearPellets()
+    {
+        foreach (Transform child in transform)
+        {
+            Destroy(child.gameObject);
+        }
+        totalPelletCount = 0;
+    }
+
+    public void SpawnAllPelletsPublic()
+    {
+        SpawnAllPellets();
+    }
+
+    public int GetTotalPelletCount()
+    {
+        return totalPelletCount;
     }
 }

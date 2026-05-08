@@ -12,6 +12,12 @@ public class Barrier_Placing : MonoBehaviour
     [SerializeField] private TextMeshProUGUI cooldownText;
     [SerializeField] private float cooldownTime = 10f;
     
+    [Header("Orbit Placement")]
+    public float orbitYaw = 0f;    // Yaw offset relative to player's facing
+    public float orbitPitch = 0f;  // Pitch offset (up/down)
+    public float heightOffset = 0.5f; 
+    public float distance = 2.0f;
+    
     private bool isPreviewMode = false;
     private GameObject previewBarrier;
     private Camera playerCamera;
@@ -99,10 +105,7 @@ public class Barrier_Placing : MonoBehaviour
         previewBarrier = CreateBarrier(true);
         if (previewBarrier != null)
         {
-            // Position 2 units in front of player and 0.5 units up
-            Vector3 spawnPos = transform.position + transform.forward * 2f;
-            spawnPos.y = transform.position.y + 0.5f;
-            previewBarrier.transform.position = spawnPos;
+            UpdatePreviewPosition();
         }
     }
 
@@ -120,12 +123,19 @@ public class Barrier_Placing : MonoBehaviour
     {
         if (previewBarrier == null) return;
 
-        // Keep the preview at a fixed position relative to player
-        // 2 units in front, 0.5 units up - regardless of camera rotation
-        Vector3 targetPos = transform.position + transform.forward * 2f;
-        targetPos.y = transform.position.y + 0.5f;
+        // Calculate position based on orbit yaw and pitch relative to player transform
+        float currentYaw = transform.eulerAngles.y + orbitYaw;
+        float currentPitch = transform.eulerAngles.x + orbitPitch;
+
+        Quaternion orbitRotation = Quaternion.Euler(currentPitch, currentYaw, 0f);
+        Vector3 orbitOffset = orbitRotation * new Vector3(0f, 0f, distance);
+        
+        Vector3 targetPos = transform.position + new Vector3(0f, heightOffset, 0f) + orbitOffset;
         
         previewBarrier.transform.position = targetPos;
+
+        // Also make the barrier face away from the player (optional but often desired)
+        previewBarrier.transform.rotation = orbitRotation;
     }
 
     void PlaceBarrier()
