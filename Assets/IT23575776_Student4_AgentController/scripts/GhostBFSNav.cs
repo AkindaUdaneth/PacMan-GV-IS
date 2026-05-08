@@ -138,13 +138,16 @@ public class GhostBFSNav : MonoBehaviour
         int start = GetClosestNode(transform.position);
         int goal = GetClosestNode(pacman.position);
 
-        var shortest = BFSPathfinder.FindShortestPath(start, goal, graph.adjacencyList);
+        // Get modified adjacency list that excludes blocked nodes
+        var modifiedGraph = BarrierNodeDisabler.GetModifiedAdjacencyList(graph.adjacencyList);
+
+        var shortest = BFSPathfinder.FindShortestPath(start, goal, modifiedGraph);
         var chosenPath = shortest;
 
         if (shortest != null && shortest.Count > 0)
         {
             // Check for faster ghosts that share nodes on this path
-            var others = FindObjectsByType<GhostBFSNav>(FindObjectsSortMode.None);
+var others = FindObjectsByType<GhostBFSNav>(FindObjectsSortMode.None);
             bool fasterOnSameWay = false;
 
             for (int i = 0; i < others.Length; i++)
@@ -176,7 +179,7 @@ public class GhostBFSNav : MonoBehaviour
 
             if (fasterOnSameWay)
             {
-                var second = BFSPathfinder.FindSecondShortestPath(start, goal, graph.adjacencyList);
+                var second = BFSPathfinder.FindSecondShortestPath(start, goal, modifiedGraph);
                 if (second != null && second.Count > 0)
                     chosenPath = second;
             }
@@ -247,17 +250,7 @@ public class GhostBFSNav : MonoBehaviour
         return closest;
     }
 
-    // Expose path and index for other ghosts to inspect
-    public List<int> GetCurrentPath()
-    {
-        return path;
-    }
-
-    public int GetCurrentPathIndex()
-    {
-        return pathIndex;
-    }
-
+    // Expose current move direction for animation
     public Vector3 GetCurrentMoveDirection()
     {
         if (graph == null || graph.nodes.Count == 0)
@@ -269,10 +262,25 @@ public class GhostBFSNav : MonoBehaviour
         Vector3 targetNodePos = graph.nodes[path[pathIndex]];
         Vector3 direction = targetNodePos - transform.position;
         direction.y = 0f;
-
-        if (direction.sqrMagnitude < 0.0001f)
-            return Vector3.zero;
-
         return direction.normalized;
+    }
+
+    // Expose path and index for other ghosts to inspect
+    public List<int> GetCurrentPath()
+    {
+        return path;
+    }
+
+    public int GetCurrentPathIndex()
+    {
+        return pathIndex;
+    }
+
+    // Force immediate path recalculation (called when barriers change)
+    public void ForcePathRecalculation()
+    {
+        timer = 1f; // Force UpdatePath to run next frame
+        path.Clear();
+        pathIndex = 0;
     }
 }

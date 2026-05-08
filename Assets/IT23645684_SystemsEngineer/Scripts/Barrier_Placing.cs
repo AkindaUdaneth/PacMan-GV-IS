@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
 
+// Ensure scripts are recognized
+using System;
+
 public class Barrier_Placing : MonoBehaviour
 {
     [SerializeField] private GameObject barrierPrefab;
@@ -136,6 +139,9 @@ public class Barrier_Placing : MonoBehaviour
             
             // Add the barrier logic component for automatic destruction
             barrier.AddComponent<Barrier_Logic>();
+            
+            // Add pathfinding component to disable nodes
+            barrier.AddComponent<BarrierNodeDisabler>();
             
             Debug.Log("Barrier placed at: " + barrier.transform.position);
             

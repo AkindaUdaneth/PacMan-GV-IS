@@ -121,7 +121,7 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        NavMeshSurface surface = FindFirstObjectByType<NavMeshSurface>();
+        NavMeshSurface surface = FindObjectOfType<NavMeshSurface>();
         if (surface != null)
         {
             surface.collectObjects = CollectObjects.All;
