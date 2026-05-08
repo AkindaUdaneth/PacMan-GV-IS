@@ -113,23 +113,26 @@ public class CherrySpawner : MonoBehaviour
             currentCherry.name = "Cherry";
             currentCherry.transform.position = spawnPos;
             currentCherry.transform.localScale = Vector3.one * 0.5f;
-            currentCherry.GetComponent<Renderer>().material.color = Color.red;
+
+            var renderer = currentCherry.GetComponent<Renderer>();
+            if (renderer != null)
+                renderer.material.color = Color.red;
+        }
+
+        if (currentCherry == null)
+        {
+            Debug.LogError("[CherrySpawner] Failed to create cherry instance.");
+            return;
         }
 
         currentCherry.tag = "Cherry";
 
-        var oldRb = currentCherry.GetComponent<Rigidbody>();
-        if (oldRb != null) Destroy(oldRb);
         foreach (var col in currentCherry.GetComponentsInChildren<Collider>())
             Destroy(col);
 
         SphereCollider sc = currentCherry.AddComponent<SphereCollider>();
         sc.isTrigger = true;
         sc.radius = colliderRadius;
-
-        Rigidbody rb = currentCherry.AddComponent<Rigidbody>();
-        rb.isKinematic = true;
-        rb.useGravity = false;
 
         CherryCollector collector = currentCherry.AddComponent<CherryCollector>();
         collector.spawner = this;

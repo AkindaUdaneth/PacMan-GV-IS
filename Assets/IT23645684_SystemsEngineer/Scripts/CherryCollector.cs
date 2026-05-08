@@ -6,36 +6,18 @@ public class CherryCollector : MonoBehaviour
     public CherrySpawner spawner;
     private bool collected = false;
 
-    void Update()
-    {
-        if (collected) return;
-
-        Collider[] hits = Physics.OverlapSphere(transform.position, 1.2f);
-        foreach (var hit in hits)
-        {
-            if (hit.CompareTag("Player") ||
-                hit.gameObject.name == "PacMan" ||
-                hit.gameObject.name.Contains("Player"))
-            {
-                Debug.Log($"[CherryCollector] Found player via OverlapSphere: {hit.gameObject.name}");
-                Collect();
-                return;
-            }
-        }
-    }
-
     void OnTriggerEnter(Collider other)
     {
         if (collected) return;
-        if (other.CompareTag("Player") || other.gameObject.name == "PacMan")
+        if (IsPlayer(other.gameObject))
             Collect();
     }
 
-    void OnCollisionEnter(Collision collision)
+    private bool IsPlayer(GameObject obj)
     {
-        if (collected) return;
-        if (collision.gameObject.CompareTag("Player") || collision.gameObject.name == "PacMan")
-            Collect();
+        return obj.CompareTag("Player") ||
+               obj.name == "PacMan" ||
+               obj.name.Contains("Player");
     }
 
     private void Collect()
