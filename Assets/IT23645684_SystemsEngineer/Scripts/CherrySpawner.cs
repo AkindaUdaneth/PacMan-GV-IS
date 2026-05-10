@@ -1,4 +1,5 @@
 // CherrySpawner.cs
+using System.Collections;
 using UnityEngine;
 
 public class CherrySpawner : MonoBehaviour
@@ -20,29 +21,45 @@ public class CherrySpawner : MonoBehaviour
 
     void Start()
     {
-        graphExtractor = FindObjectOfType<NavMeshGraphExtractor>();
+        graphExtractor = FindAnyObjectByType<NavMeshGraphExtractor>();
 
         GameObject playerObj = GameObject.FindWithTag("Player");
         if (playerObj == null) playerObj = GameObject.Find("PacMan");
         if (playerObj == null) playerObj = GameObject.Find("Player");
         if (playerObj != null) player = playerObj.transform;
 
-        if (graphExtractor == null)
+        if (graphExtractor == null || graphExtractor.nodes == null || graphExtractor.nodes.Count == 0)
         {
-            Debug.LogError("[CherrySpawner] NavMeshGraphExtractor not found!");
-            enabled = false; // disable this script only, don't break the game
-            return;
-        }
-
-        if (graphExtractor.nodes == null || graphExtractor.nodes.Count == 0)
-        {
-            Debug.LogError("[CherrySpawner] No nodes found!");
-            enabled = false;
+            StartCoroutine(WaitForGraphAndSpawn());
             return;
         }
 
         Debug.Log($"[CherrySpawner] Ready. Nodes: {graphExtractor.nodes.Count}");
         SpawnCherry();
+    }
+
+    private IEnumerator WaitForGraphAndSpawn()
+    {
+        int retries = 0;
+
+        while (retries < 120)
+        {
+            graphExtractor = FindAnyObjectByType<NavMeshGraphExtractor>();
+            if (graphExtractor != null)
+                graphExtractor.ExtractGraph();
+
+            if (graphExtractor != null && graphExtractor.nodes != null && graphExtractor.nodes.Count > 0)
+            {
+                Debug.Log($"[CherrySpawner] Ready after wait. Nodes: {graphExtractor.nodes.Count}");
+                SpawnCherry();
+                yield break;
+            }
+
+            retries++;
+            yield return null;
+        }
+
+        Debug.LogWarning("[CherrySpawner] Timed out waiting for NavMeshGraphExtractor. Cherry spawn skipped.");
     }
 
     void Update()
@@ -87,6 +104,9 @@ public class CherrySpawner : MonoBehaviour
 
     private void SpawnCherry()
     {
+        if (graphExtractor == null || graphExtractor.nodes == null || graphExtractor.nodes.Count == 0)
+            return;
+
         if (currentCherry != null)
         {
             Destroy(currentCherry);
@@ -142,5 +162,16 @@ public class CherrySpawner : MonoBehaviour
         respawnTimer = 0f;
 
         Debug.Log($"[CherrySpawner] Spawned at {spawnPos}");
+    }
+
+    public void SpawnCherryPublic()
+    {
+        if (graphExtractor == null || graphExtractor.nodes == null || graphExtractor.nodes.Count == 0)
+        {
+            StartCoroutine(WaitForGraphAndSpawn());
+            return;
+        }
+
+        SpawnCherry();
     }
 }

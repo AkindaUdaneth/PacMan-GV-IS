@@ -16,6 +16,10 @@ public class PelletCollector : MonoBehaviour
             else
                 Debug.LogError("[PelletCollector] ScoreManager.Instance is NULL!");
 
+            // Notify GameManager for level progression
+            if (GameManager.Instance != null)
+                GameManager.Instance.OnPelletCollected(scoreValue);
+
             Destroy(gameObject);
         }
     }
