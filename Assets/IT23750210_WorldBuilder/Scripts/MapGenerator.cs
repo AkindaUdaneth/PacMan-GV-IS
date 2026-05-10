@@ -84,8 +84,7 @@ public class MapGenerator : MonoBehaviour
     [ContextMenu("Generate Maze")]
     public void GenerateMaze()
     {
-        for (int i = transform.childCount - 1; i >= 0; i--)
-            DestroyImmediate(transform.GetChild(i).gameObject);
+        ClearOldMap();
 
         int[,] map = GetCurrentMap();
         int rows = map.GetLength(0);
@@ -121,7 +120,7 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        NavMeshSurface surface = FindFirstObjectByType<NavMeshSurface>();
+        NavMeshSurface surface = FindAnyObjectByType<NavMeshSurface>();
         if (surface != null)
         {
             surface.collectObjects = CollectObjects.All;
@@ -129,6 +128,23 @@ public class MapGenerator : MonoBehaviour
         }
 
         Debug.Log($"Level {levelNumber} generated: {rows} rows x {cols} cols");
+    }
+
+    public void ClearOldMap()
+    {
+        // Use appropriate destroy method based on context
+        if (Application.isPlaying)
+        {
+            // Runtime: use Destroy (queued)
+            for (int i = transform.childCount - 1; i >= 0; i--)
+                Destroy(transform.GetChild(i).gameObject);
+        }
+        else
+        {
+            // Editor: use DestroyImmediate (immediate)
+            for (int i = transform.childCount - 1; i >= 0; i--)
+                DestroyImmediate(transform.GetChild(i).gameObject);
+        }
     }
 
     void Start()
