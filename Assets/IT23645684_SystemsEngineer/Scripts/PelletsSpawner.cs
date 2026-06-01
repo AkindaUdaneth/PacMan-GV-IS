@@ -10,13 +10,14 @@ public class PelletsSpawner : MonoBehaviour
     [SerializeField] private float bigScale = 0.12f;
 
     private NavMeshGraphExtractor graphExtractor;
+    private int totalPelletCount = 0;
 
     void Start()
     {
         graphExtractor = Object.FindAnyObjectByType<NavMeshGraphExtractor>();
         if (graphExtractor == null || graphExtractor.nodes == null || graphExtractor.nodes.Count == 0)
         {
-            Debug.LogError("[PelletsSpawner] NavMeshGraphExtractor not ready or has no nodes.");
+            StartCoroutine(SpawnWhenReady());
             return;
         }
         SpawnAllPellets();
@@ -24,6 +25,9 @@ public class PelletsSpawner : MonoBehaviour
 
     private void SpawnAllPellets()
     {
+        if (graphExtractor == null || graphExtractor.nodes == null || graphExtractor.nodes.Count == 0)
+            return;
+
         int nodeCount = graphExtractor.nodes.Count;
 
         // Determine number of big pellets to achieve ~ 1 big : 4 small ratio
@@ -41,12 +45,38 @@ public class PelletsSpawner : MonoBehaviour
         HashSet<int> bigSet = new HashSet<int>();
         for (int k = 0; k < bigCount; k++) bigSet.Add(indices[k]);
 
+        totalPelletCount = 0;
         for (int n = 0; n < nodeCount; n++)
         {
             Vector3 node = graphExtractor.nodes[n];
             bool isBig = bigSet.Contains(n);
             SpawnPelletAtNode(node, isBig);
+            totalPelletCount++;
         }
+    }
+
+    private System.Collections.IEnumerator SpawnWhenReady()
+    {
+        int retries = 0;
+        while (retries < 120)
+        {
+            if (graphExtractor == null)
+                graphExtractor = Object.FindAnyObjectByType<NavMeshGraphExtractor>();
+
+            if (graphExtractor != null)
+                graphExtractor.ExtractGraph();
+
+            if (graphExtractor != null && graphExtractor.nodes != null && graphExtractor.nodes.Count > 0)
+            {
+                SpawnAllPellets();
+                yield break;
+            }
+
+            retries++;
+            yield return null;
+        }
+
+        Debug.LogWarning("[PelletsSpawner] Timed out waiting for NavMeshGraphExtractor. No pellets spawned.");
     }
 
     private void SpawnPelletAtNode(Vector3 nodePos, bool isBig)
@@ -93,5 +123,24 @@ public class PelletsSpawner : MonoBehaviour
 
         var collector = pellet.AddComponent<PelletCollector>();
         collector.scoreValue = isBig ? 20 : 10;
+    }
+
+    public void ClearPellets()
+    {
+        foreach (Transform child in transform)
+        {
+            Destroy(child.gameObject);
+        }
+        totalPelletCount = 0;
+    }
+
+    public void SpawnAllPelletsPublic()
+    {
+        SpawnAllPellets();
+    }
+
+    public int GetTotalPelletCount()
+    {
+        return totalPelletCount;
     }
 }

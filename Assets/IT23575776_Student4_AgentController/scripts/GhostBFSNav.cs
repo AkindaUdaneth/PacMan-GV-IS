@@ -276,6 +276,33 @@ var others = FindObjectsByType<GhostBFSNav>(FindObjectsSortMode.None);
         return pathIndex;
     }
 
+    void OnCollisionEnter(Collision collision)
+    {
+        TryHitPlayer(collision.gameObject);
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        TryHitPlayer(other.gameObject);
+    }
+
+    private void TryHitPlayer(GameObject other)
+    {
+        if (!IsPlayer(other))
+            return;
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnPlayerEaten(transform.position);
+    }
+
+    private bool IsPlayer(GameObject obj)
+    {
+        return obj.CompareTag("Player") ||
+               obj.name == "PacMan" ||
+               obj.name == "Pacman" ||
+               obj.name.Contains("Player");
+    }
+
     // Force immediate path recalculation (called when barriers change)
     public void ForcePathRecalculation()
     {

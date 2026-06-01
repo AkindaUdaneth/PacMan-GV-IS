@@ -3,25 +3,28 @@ using UnityEngine;
 public class ThirdPersonCamera : MonoBehaviour
 {
     public Transform target;   // The player's transform
-    public Vector3 offset = new Vector3(0f, 0.5f, -1.0f); // How far from the player
-    public float smoothSpeed = 100f;
-    public Vector3 rotationOffset = new Vector3(10f, 0f, 0f); // Extra camera rotation in XYZ (degrees)
-    public float rotationSmoothSpeed = 100f;
+    public float distance = 2.0f;
+    public float height = 0.6f;
+    public float orbitYaw = -90f;   // Yaw offset relative to player's facing
+    public float orbitPitch = 15f;  // Up/down camera angle
+    public float smoothSpeed = 12f;
+    public Vector3 lookAtOffset = new Vector3(0f, 0.4f, 0f);
 
     void LateUpdate()
     {
         if (target == null) return;
 
-        // The desired position is behind the player, based on their current rotation.
-        // We use Quaternion * Vector3 to apply the rotation to the offset.
-        Vector3 desiredPosition = target.position + (target.rotation * offset);
+        float yaw = target.eulerAngles.y + orbitYaw;
+        Quaternion orbitRotation = Quaternion.Euler(orbitPitch, yaw, 0f);
+        Vector3 orbitOffset = orbitRotation * new Vector3(0f, 0f, -distance);
+        Vector3 desiredPosition = target.position + new Vector3(0f, height, 0f) + orbitOffset;
         
         // Smoothly move the camera towards the desired position
         Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
         transform.position = smoothedPosition;
 
-        // Follow full target rotation (X, Y, Z) with optional offset.
-        Quaternion desiredRotation = target.rotation * Quaternion.Euler(rotationOffset);
-        transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, rotationSmoothSpeed * Time.deltaTime);
+        // Always look towards the player with configurable look offset.
+        Vector3 lookTarget = target.position + lookAtOffset;
+        transform.LookAt(lookTarget);
     }
 }

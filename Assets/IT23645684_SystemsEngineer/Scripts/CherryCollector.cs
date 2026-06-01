@@ -32,6 +32,9 @@ public class CherryCollector : MonoBehaviour
         else
             Debug.LogError("[CherryCollector] ScoreManager.Instance is NULL!");
 
+        if (GameManager.Instance != null)
+            GameManager.Instance.AddHealth(1);
+
         spawner?.OnCherryCollected();
         Destroy(gameObject);
     }
