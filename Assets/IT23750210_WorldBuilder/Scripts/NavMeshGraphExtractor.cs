@@ -23,7 +23,7 @@ public class NavMeshGraphExtractor : MonoBehaviour
 
     void Start()
     {
-        mapGenerator = FindFirstObjectByType<MapGenerator>();
+        mapGenerator = FindAnyObjectByType<MapGenerator>();
         ExtractGraph();
     }
 
@@ -33,7 +33,7 @@ public class NavMeshGraphExtractor : MonoBehaviour
         nodes.Clear();
         adjacencyList.Clear();
 
-        mapGenerator = FindFirstObjectByType<MapGenerator>();
+        mapGenerator = FindAnyObjectByType<MapGenerator>();
         if (mapGenerator == null)
         {
             Debug.LogError("NavMeshGraphExtractor: No MapGenerator found!");
