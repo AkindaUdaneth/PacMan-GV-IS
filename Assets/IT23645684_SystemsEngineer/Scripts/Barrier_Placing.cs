@@ -13,7 +13,7 @@ public class Barrier_Placing : MonoBehaviour
     [SerializeField] private float cooldownTime = 10f;
     
     [Header("Orbit Placement")]
-    public float orbitYaw = 0f;    // Yaw offset relative to player's facing
+    public float orbitYaw = -90f;    // Yaw offset relative to player's facing
     public float orbitPitch = 0f;  // Pitch offset (up/down)
     public float heightOffset = 0.5f; 
     public float distance = 2.0f;
