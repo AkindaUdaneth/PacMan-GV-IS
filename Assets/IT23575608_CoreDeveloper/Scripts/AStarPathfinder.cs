@@ -33,7 +33,8 @@ namespace IT23575608_CoreDeveloper
             }
 
             var nodes = graphExtractor.nodes;
-            var adjacencyList = graphExtractor.adjacencyList;
+            // Get the modified adjacency list from BarrierNodeDisabler to respect placed barriers
+            var adjacencyList = BarrierNodeDisabler.GetModifiedAdjacencyList(graphExtractor.adjacencyList);
 
             if (startIndex < 0 || startIndex >= nodes.Count || goalIndex < 0 || goalIndex >= nodes.Count)
             {
@@ -69,6 +70,7 @@ namespace IT23575608_CoreDeveloper
                 if (current == goalIndex)
                 {
                     currentPath = ReconstructPath(cameFrom, current);
+                    Debug.Log($"[A* Pathfinder] Computed path from node {startIndex} to {goalIndex} (Length: {currentPath.Count} nodes)");
                     return currentPath;
                 }
 

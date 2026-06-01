@@ -135,13 +135,27 @@ public class GhostBFSNav : MonoBehaviour
         if (graph == null || graph.nodes.Count == 0 || pacman == null)
             return;
 
-        int start = GetClosestNode(transform.position);
-        int goal = GetClosestNode(pacman.position);
+        int start = GetClosestUnblockedNode(transform.position);
+        int goal = GetClosestUnblockedNode(pacman.position);
 
         // Get modified adjacency list that excludes blocked nodes
         var modifiedGraph = BarrierNodeDisabler.GetModifiedAdjacencyList(graph.adjacencyList);
 
-        var shortest = BFSPathfinder.FindShortestPath(start, goal, modifiedGraph);
+        List<int> shortest = null;
+        if (GameManager.UseAStar)
+        {
+            var pathfinder = FindFirstObjectByType<IT23575608_CoreDeveloper.AStarPathfinder>();
+            if (pathfinder == null)
+            {
+                pathfinder = graph.gameObject.AddComponent<IT23575608_CoreDeveloper.AStarPathfinder>();
+                pathfinder.graphExtractor = graph;
+            }
+            shortest = pathfinder.FindPath(start, goal);
+        }
+        else
+        {
+            shortest = BFSPathfinder.FindShortestPath(start, goal, modifiedGraph);
+        }
         var chosenPath = shortest;
 
         if (shortest != null && shortest.Count > 0)
@@ -245,6 +259,33 @@ var others = FindObjectsByType<GhostBFSNav>(FindObjectsSortMode.None);
                 minDist = d;
                 closest = i;
             }
+        }
+
+        return closest;
+    }
+
+    int GetClosestUnblockedNode(Vector3 pos)
+    {
+        if (graph.nodes.Count == 0) return 0;
+
+        int closest = -1;
+        float minDist = float.MaxValue;
+
+        for (int i = 0; i < graph.nodes.Count; i++)
+        {
+            if (BarrierNodeDisabler.IsNodeBlocked(i)) continue;
+
+            float d = Vector3.Distance(pos, graph.nodes[i]);
+            if (d < minDist)
+            {
+                minDist = d;
+                closest = i;
+            }
+        }
+
+        if (closest == -1)
+        {
+            return GetClosestNode(pos);
         }
 
         return closest;
