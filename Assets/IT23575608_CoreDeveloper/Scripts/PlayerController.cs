@@ -27,6 +27,8 @@ namespace IT23575608_CoreDeveloper
 
         void Update()
         {
+            if (Time.timeScale == 0f) return;
+
             // 1. Get input from WASD or Arrow Keys
             // GetAxisRaw makes the movement snappy (0 or 1) rather than floaty
             float horizontal = Input.GetAxisRaw("Horizontal");

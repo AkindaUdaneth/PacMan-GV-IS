@@ -42,6 +42,8 @@ public class Barrier_Placing : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale == 0f) return;
+
         // Update cooldown timer
         if (cooldownTimer > 0)
         {

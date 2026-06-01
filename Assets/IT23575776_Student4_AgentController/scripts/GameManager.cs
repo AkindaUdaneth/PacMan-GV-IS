@@ -350,4 +350,78 @@ private void Win()
     {
         OnHealthChanged?.Invoke(currentHealth);
     }
+
+    private bool isPaused = false;
+    private TextMeshProUGUI pauseText;
+
+    void Update()
+    {
+        if (gameOver || gameWon) return;
+
+        bool escPressed = false;
+
+        if (UnityEngine.InputSystem.Keyboard.current != null)
+        {
+            if (UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
+                escPressed = true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            escPressed = true;
+        }
+
+        if (escPressed)
+        {
+            TogglePause();
+        }
+    }
+
+    public void TogglePause()
+    {
+        isPaused = !isPaused;
+
+        if (isPaused)
+        {
+            Time.timeScale = 0f;
+            EnsurePauseText();
+            if (pauseText != null) pauseText.gameObject.SetActive(true);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            Time.timeScale = 1f;
+            if (pauseText != null) pauseText.gameObject.SetActive(false);
+            
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
+    private void EnsurePauseText()
+    {
+        if (uiCanvas == null)
+            EnsureUiCanvas();
+
+        if (pauseText != null)
+            return;
+
+        GameObject textObject = new GameObject("PauseText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        textObject.transform.SetParent(uiCanvas.transform, false);
+
+        RectTransform rectTransform = textObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.anchoredPosition = Vector2.zero;
+        rectTransform.sizeDelta = new Vector2(800f, 200f);
+
+        pauseText = textObject.GetComponent<TextMeshProUGUI>();
+        pauseText.alignment = TextAlignmentOptions.Center;
+        pauseText.fontSize = 72f;
+        pauseText.color = Color.yellow;
+        pauseText.text = "PAUSED";
+        pauseText.gameObject.SetActive(false);
+    }
 }

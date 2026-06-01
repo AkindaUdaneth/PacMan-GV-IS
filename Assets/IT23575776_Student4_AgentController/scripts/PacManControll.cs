@@ -45,6 +45,8 @@ public class PacManControll : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale == 0f) return;
+
         // New Input System path
         if (Keyboard.current != null)
         {
@@ -85,6 +87,8 @@ public class PacManControll : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (Time.timeScale == 0f) return;
+
         if (rb != null)
         {
             // Apply physics-based movement
