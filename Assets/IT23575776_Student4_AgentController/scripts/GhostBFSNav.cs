@@ -17,10 +17,13 @@ public class GhostBFSNav : MonoBehaviour
     private float timer = 0f;
     private float pacmanSearchTimer = 0f;
 
+    private LineRenderer lineRenderer;
+
     void Start()
     {
         SetupRigidbody();
         SetupCollider();
+        SetupLineRenderer();
 
         graph = FindFirstObjectByType<NavMeshGraphExtractor>();
         TryFindPacman(initial: true);
@@ -28,6 +31,29 @@ public class GhostBFSNav : MonoBehaviour
         // Randomize speed at game launch
         speed = Random.Range(minSpeed, maxSpeed);
         Debug.Log($"[{name}] Assigned speed: {speed}");
+    }
+
+    void SetupLineRenderer()
+    {
+        lineRenderer = GetComponent<LineRenderer>();
+        if (lineRenderer == null)
+        {
+            lineRenderer = gameObject.AddComponent<LineRenderer>();
+        }
+
+        // Configure appearance
+        lineRenderer.startWidth = 0.2f;
+        lineRenderer.endWidth = 0.2f;
+        lineRenderer.positionCount = 0;
+        lineRenderer.useWorldSpace = true;
+
+        // Create a material if none exists (Standard/Internal/Hidden/InternalErrorShader fix)
+        // Set a semi-transparent color unique to each ghost if possible, or just default visible
+        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        Color ghostColor = GetComponentInChildren<Renderer>()?.material.color ?? Color.red;
+        ghostColor.a = 0.6f;
+        lineRenderer.startColor = ghostColor;
+        lineRenderer.endColor = ghostColor;
     }
 
     void Update()
@@ -44,6 +70,38 @@ public class GhostBFSNav : MonoBehaviour
         }
 
         MoveTowardsPacMan();
+        UpdateVisualPath();
+    }
+
+    void UpdateVisualPath()
+    {
+        if (lineRenderer == null) return;
+
+        // Only show if NOT in A* mode (per user request for BFS mode)
+        if (GameManager.UseAStar)
+        {
+            lineRenderer.positionCount = 0;
+            return;
+        }
+
+        if (path == null || path.Count == 0 || pathIndex >= path.Count)
+        {
+            lineRenderer.positionCount = 0;
+            return;
+        }
+
+        int remainingCount = path.Count - pathIndex;
+        lineRenderer.positionCount = remainingCount + 1; // +1 for current position
+
+        lineRenderer.SetPosition(0, transform.position);
+
+        for (int i = 0; i < remainingCount; i++)
+        {
+            int nodeIdx = path[pathIndex + i];
+            Vector3 pos = graph.nodes[nodeIdx];
+            pos.y += 0.5f; // Raise slightly above ground
+            lineRenderer.SetPosition(i + 1, pos);
+        }
     }
 
     // ---------------- SETUP ----------------

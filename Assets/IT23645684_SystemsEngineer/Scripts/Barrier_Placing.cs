@@ -13,7 +13,7 @@ public class Barrier_Placing : MonoBehaviour
     [SerializeField] private float cooldownTime = 10f;
     
     [Header("Orbit Placement")]
-    public float orbitYaw = 0f;    // Yaw offset relative to player's facing
+    public float orbitYaw = -90f;    // Yaw offset relative to player's facing
     public float orbitPitch = 0f;  // Pitch offset (up/down)
     public float heightOffset = 0.5f; 
     public float distance = 2.0f;
@@ -55,7 +55,21 @@ public class Barrier_Placing : MonoBehaviour
         }
         
         // Toggle preview mode with E key (only if cooldown is done)
-        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame && cooldownTimer <= 0)
+        bool ePressed = false;
+        
+        // Try New Input System
+        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) 
+        {
+            ePressed = true;
+        }
+        
+        // Fallback to Legacy Input System if not detected yet (wrapped in try-catch to avoid crashing if disabled in settings)
+        if (!ePressed)
+        {
+            try { if (Input.GetKeyDown(KeyCode.E)) ePressed = true; } catch { }
+        }
+
+        if (ePressed && cooldownTimer <= 0)
         {
             if (!isPreviewMode)
             {
@@ -75,7 +89,21 @@ public class Barrier_Placing : MonoBehaviour
             UpdatePreviewPosition();
 
             // Place barrier with left mouse click (only if cooldown is done)
-            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && cooldownTimer <= 0)
+            bool mouseClicked = false;
+            
+            // Try New Input System
+            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                mouseClicked = true;
+            }
+            
+            // Fallback to Legacy Input System
+            if (!mouseClicked)
+            {
+                try { if (Input.GetMouseButtonDown(0)) mouseClicked = true; } catch { }
+            }
+
+            if (mouseClicked && cooldownTimer <= 0)
             {
                 PlaceBarrier();
             }
@@ -150,8 +178,22 @@ public class Barrier_Placing : MonoBehaviour
             // Add the barrier logic component for automatic destruction
             barrier.AddComponent<Barrier_Logic>();
             
+            // Ensure the barrier has a Rigidbody and falls with gravity
+            Rigidbody rb = barrier.GetComponent<Rigidbody>();
+            if (rb == null)
+            {
+                rb = barrier.AddComponent<Rigidbody>();
+            }
+            rb.isKinematic = false;
+            rb.useGravity = true;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
             // Add pathfinding component to disable nodes
             barrier.AddComponent<BarrierNodeDisabler>();
+
+            // Fix shader compatibility in builds (pink material fix)
+            FixShaderCompatibility(barrier);
             
             Debug.Log("Barrier placed at: " + barrier.transform.position);
             
@@ -193,6 +235,19 @@ public class Barrier_Placing : MonoBehaviour
 
             BoxCollider boxCollider = barrier.AddComponent<BoxCollider>();
             boxCollider.size = Vector3.one;
+
+            // Ensure the fallback cube has a valid material for the build
+            Renderer cubeRenderer = cube.GetComponent<Renderer>();
+            if (cubeRenderer != null)
+            {
+                Shader defaultShader = Shader.Find("Universal Render Pipeline/Lit");
+                if (defaultShader == null) defaultShader = Shader.Find("Standard");
+                
+                if (defaultShader != null)
+                {
+                    cubeRenderer.material = new Material(defaultShader);
+                }
+            }
         }
 
         // Disable colliders for preview
@@ -220,6 +275,23 @@ public class Barrier_Placing : MonoBehaviour
         return barrier;
     }
 
+    void FixShaderCompatibility(GameObject barrier)
+    {
+        Renderer[] renderers = barrier.GetComponentsInChildren<Renderer>();
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer.material == null || renderer.material.shader == null || renderer.material.shader.name == "Hidden/InternalErrorShader")
+            {
+                Shader fallbackShader = Shader.Find("Universal Render Pipeline/Lit");
+                if (fallbackShader == null) fallbackShader = Shader.Find("Standard");
+                if (fallbackShader != null)
+                {
+                    renderer.material.shader = fallbackShader;
+                }
+            }
+        }
+    }
+
     void SetPreviewMaterial(GameObject barrier)
     {
         Renderer[] renderers = barrier.GetComponentsInChildren<Renderer>();
@@ -232,14 +304,34 @@ public class Barrier_Placing : MonoBehaviour
 
         foreach (Renderer renderer in renderers)
         {
-            Material greenMat = new Material(Shader.Find("Standard"));
+            // Use a safer shader search for URP or Standard
+            Shader previewShader = Shader.Find("Universal Render Pipeline/Lit");
+            if (previewShader == null) previewShader = Shader.Find("Standard");
+            if (previewShader == null) previewShader = Shader.Find("Diffuse");
+            
+            Material greenMat = new Material(previewShader != null ? previewShader : Shader.Find("Hidden/InternalErrorShader"));
             greenMat.color = new Color(0, 1, 0, 0.5f);
-            greenMat.SetFloat("_Mode", 3);
-            greenMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            greenMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            greenMat.SetInt("_ZWrite", 0);
-            greenMat.renderQueue = 3000;
-            greenMat.EnableKeyword("_ALPHABLEND_ON");
+            
+            // Standard Shader properties
+            if (previewShader != null && previewShader.name.Contains("Standard"))
+            {
+                greenMat.SetFloat("_Mode", 3);
+                greenMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                greenMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                greenMat.SetInt("_ZWrite", 0);
+                greenMat.renderQueue = 3000;
+                greenMat.EnableKeyword("_ALPHABLEND_ON");
+            }
+            // URP Lit Shader properties
+            else if (previewShader != null && previewShader.name.Contains("Universal Render Pipeline/Lit"))
+            {
+                greenMat.SetFloat("_Surface", 1); // 1 = Transparent
+                greenMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                greenMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                greenMat.SetInt("_ZWrite", 0);
+                greenMat.renderQueue = 3000;
+            }
+            
             renderer.material = greenMat;
         }
     }
