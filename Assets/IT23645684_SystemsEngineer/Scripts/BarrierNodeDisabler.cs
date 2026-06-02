@@ -22,6 +22,13 @@ public class BarrierNodeDisabler : MonoBehaviour
 
         // Disable nodes under this barrier
         DisableNodesUnderBarrier();
+
+        // Notify all ghosts to recalculate paths immediately when barrier is placed
+        GhostBFSNav[] ghosts = FindObjectsByType<GhostBFSNav>(FindObjectsSortMode.None);
+        foreach (GhostBFSNav ghost in ghosts)
+        {
+            ghost.ForcePathRecalculation();
+        }
     }
 
     void OnDestroy()
