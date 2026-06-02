@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+    public static bool UseAStar = false;
 
     public event Action<int> OnHealthChanged;
     public event Action<int> OnLevelChanged;
